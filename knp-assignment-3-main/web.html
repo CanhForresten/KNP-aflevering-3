@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>KNP Module2: Weather Station Client</title>
+
+  <!-- Axios for HTTP -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+  <!-- jQuery (optional but you already use it) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  
+  <!-- Modern Tabulator -->
+    <script src="https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.min.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@4.9.3/dist/css/tabulator.min.css" rel="stylesheet">
+
+    <!-- Link for google charts -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    
+  
+  <script>
+	let table; // parameter defined for later, to use table 
+  google.charts.load("current", { packages:["corechart"] });
+
+  google.charts.setOnLoadCallback(() => console.log("Temperature Charts Loaded"));
+    
+    // ============================
+    //   GET all weather data
+    // ============================
+    function getData() {
+      //add the logic to request HTTP GET to your server 
+      // Use axios.get()
+      axios.get("http://172.16.15.2:8080/") 
+       //you request to your server HTTP GET 
+      
+      .then(response => {
+        //you will get response from your server 
+        //then you can display the response on browser (your web client)
+        //example, can use a table for weather data 
+        setTable(response.data);
+        drawChart(response.data);
+      })
+      .catch(error => {
+        //you can print error message, if there is error 
+        // by using e.g., console.error("get error:", error);
+        //or by using e.g., alert("GET all failed");
+        console.error("get error: ", error);
+        alert('GET all faild');
+      });
+    }
+
+    // ============================
+    //   POST new weather record
+    // ============================
+    function sendData() {
+      //build json object for new weather data from user input
+    const newdata = {
+        id: document.getElementById("id").value,
+        date: document.getElementById("date").value,
+        time: document.getElementById("time").value,
+        place: {
+        placeName: document.getElementById("placeName").value,
+        lat: Number(document.getElementById("lat").value),
+        lon: Number(document.getElementById("lon").value)
+        },
+        temperature: Number(document.getElementById("temperature").value),
+        humidity: Number(document.getElementById("humidity").value)
+    };
+
+      axios.post("http://172.16.15.2:8080/", newdata)
+      .then(response => {
+        //POST doesn't get weather data, 
+        //only status code from server e.g., 200-succeed, 400 bad request, 501 not implemented etc.
+        //then, you can print out when response succeed, e.g., console.log("POST OK"); or alert("new data created");
+        console.log("POST OK");
+        alert('New data created');
+        
+      })
+      .catch(error => {
+        alert('Try again');
+      });
+    }
+
+    function getId() {
+        const id = document.getElementById("id").value;
+
+        if(!id){
+            alert("Please enter ID first");
+        }
+        axios.get(`http://172.16.15.2:8080/id/${id}`)
+        .then(response => {
+            setTable(response.data);
+        })
+        .catch(error => {
+            console.log("Get by id error: ", error);
+            alert("Get by id faild");
+        })
+    }
+
+    function getDate() {
+        const date = document.getElementById("date").value;
+
+        if(!date){
+            alert("Please enter date first");
+        }
+        axios.get(`http://172.16.15.2:8080/date/${date}`)
+        .then(response => {
+            setTable(response.data);
+        })
+        .catch(error => {
+            console.log("Get by date error: ", error);
+            alert("Get by date faild");
+        })
+    }
+
+    function getThree() {
+
+        axios.get("http://172.16.15.2:8080/three")
+        .then(response => {
+            setTable(response.data);
+        })
+        .catch(error => {
+            console.log("Get three error: ", error);
+            alert("Get three faild");
+        })
+    }
+
+    function DeleteId() {
+        const id = document.getElementById("id").value;
+        if(!id){
+            alert("Please enter ID first");
+            return;
+        }
+
+        axios.delete(`http://172.16.15.2:8080/id/${id}`)
+            .then(response => {
+                alert("Deleted ID: " + id);
+                setTable(response.data);
+            })
+            .catch(error => {
+                console.error("Delete error:", error);
+                alert("Delete failed");
+            });
+    }
+
+    function updateData() {
+      const id = document.getElementById("id").value;
+      if (!id) {
+          alert("Please enter ID first");
+          return;
+      }
+
+      const updatedData = {
+          id: id,
+          date: document.getElementById("date").value,
+          time: document.getElementById("time").value,
+          place: {
+              placeName: document.getElementById("placeName").value,
+              lat: Number(document.getElementById("lat").value),
+              lon: Number(document.getElementById("lon").value)
+          },
+          temperature: Number(document.getElementById("temperature").value),
+          humidity: Number(document.getElementById("humidity").value)
+      };
+
+      axios.put(`http://172.16.15.2:8080/id/${id}`, updatedData)
+          .then(response => {
+              alert("Data updated successfully");
+              // Tabellen opdateres automatisk via WebSocket
+          })
+          .catch(error => {
+              console.error("Update error:", error.response ? error.response.data : error);
+              alert("Update failed");
+          });
+    }
+
+
+    // ============================
+    //   Initialize / make Table by using 3rd party table feature - Tabulator talbe
+    // ============================
+    function setTable(data) {
+      if (!table) {
+        table = new Tabulator("#table", {
+          layout: "fitDataFill",
+          height: "311px",
+          columns: [
+            { title: "Id",          field: "id" },  //Make sure this is identical with your server struct
+            { title: "Date",        field: "date" }, //Must identical with your server struct 
+            { title: "Time",        field: "time" }, //Must identical with your server struct
+            { title: "Place",       field: "place.placeName" }, //Must identical with your server struct
+            { title: "Latitude",    field: "place.lat" }, //Must identical with your server struct
+            { title: "Longitude",   field: "place.lon" }, //Must identical with your server struct
+            { title: "Temperature", field: "temperature" }, //Must identical with your server struct
+            { title: "Humidity",    field: "humidity" } //Must identical with your server struct
+          ]
+        });
+      }
+
+      table.setData(data);
+    }
+
+    //ToDo: implement this function to draw google chart for temperature data
+    //give your own function name
+    function drawChart(weatherData) {
+      // step1. Create a DataTable
+      const data = new google.visualization.DataTable(); //Use google library function 
+      //step2. Add columns
+      data.addColumn("string", "ID");        // add into X-axis
+      data.addColumn("number", "Temperature"); // add into Y-axis
+      // step3. Loop through the weather array and add rows
+      weatherData.forEach(item => {
+          let temp = parseFloat(item.temperature);
+
+          if (!isNaN(temp)) {
+              data.addRow([ item.id, temp ]);
+          }
+      });
+      // step4. Create chart options (title, legend, etc.)
+      const options = {
+          title: "Temperature by Weather ID",
+          curveType: "function",
+          legend: { position: "bottom" }
+      };
+      // step5. Create the chart object
+      const chart = new google.visualization.LineChart(
+          document.getElementById("chart_div")
+      );
+      // step6. Draw the chart in the "chart_div"
+      chart.draw(data, options);
+    }
+
+    //WebSocket Routing (Note: Route Is chat)
+    const socket = new WebSocket('ws://172.16.15.2:8080/chat');
+    //Listen for messages
+    socket.addEventListener('open', function (event){
+    //Sending a message to the web socket server...
+    socket.send('Hello Server!');
+    });
+    //Listen for messages
+    socket.addEventListener('message', function (message){
+    document.getElementById("wsupdate").innerHTML = message.data;
+    });
+  </script>
+</head>
+
+
+<body>
+  <h1>KNP Module2: Weather Station Client</h1>
+  <h3>[Lab1] GET list — [Lab2] POST data</h3>
+
+  <!-- Wrapper med to kolonner -->
+  <div style="display: flex; gap: 30px;">
+    
+    <!-- Venstre kolonne: Input felter -->
+    <div style="flex: 1; min-width: 300px;">
+      <p><b>Enter weather data:</b></p>
+      <p>Id: <input id="id" type="text"></p>
+      <p>Date: <input id="date" type="text"></p>
+      <p>Time: <input id="time" type="text"></p>
+      <p>Place name: <input id="placeName" type="text"></p>
+      <p>Latitude: <input id="lat" type="number"></p>
+      <p>Longitude: <input id="lon" type="number"></p>
+      <p>Temperature: <input id="temperature" type="number"></p>
+      <p>Humidity: <input id="humidity" type="number"></p>
+
+      <!-- Buttons -->
+      <input type="button" onclick="getData()" value="Get List(GET all)">
+      <input type="button" onclick="sendData()" value="Send Data(POST)">
+      <br><br>
+      <input type="button" onclick="getId()" value="Get by id">
+      <input type="button" onclick="getDate()" value="Get by date">
+      <input type="button" onclick="getThree()" value="Get three">
+      <br><br>
+      <input type="button" onclick="DeleteId()" value="Delete by ID">
+      <input type="button" onclick="updateData()" value="Update Data (PUT)">
+    </div>
+
+    <!-- Højre kolonne: Chart -->
+    <div style="flex: 1; min-width: 400px;">
+      <h2>Temperature Chart</h2>
+      <div id="chart_div" style="width: 100%; height: 500px; border: 1px solid #ccc;"></div>
+    </div>
+    
+  </div>
+
+  <!-- Tabel under begge kolonner -->
+  <br><br>
+  <h2>3. Weather Data Table</h2>
+  <b>Action: </b>
+  <i id="wsupdate">*changes*</i><br>
+  <div id="table"></div>
+</body>
+</html>

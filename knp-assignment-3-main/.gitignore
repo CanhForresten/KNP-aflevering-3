@@ -1,0 +1,96 @@
+# =====================================
+# Build / Compilation artifacts
+# =====================================
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+*.obj
+*.o
+*.pdb
+
+# =====================================
+# IDE / Editor settings
+# =====================================
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*.user
+*.vcxproj*
+*.sln
+
+# VSCode Remote SSH caches (common for Raspberry Pi dev)
+.vscode-server/
+.vscode-server-insiders/
+.vscode-remote/
+
+# =====================================
+# System and OS junk files
+# =====================================
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+*.old
+*.log
+
+# =====================================
+# External dependencies
+# (keep header-only libs but ignore build outputs)
+# =====================================
+external/llhttp/build/
+external/llhttp/bin/
+external/llhttp/generated/
+external/restinio/build/
+external/restinio/bin/
+
+# Keep these header-only / source dependencies:
+!external/expected-lite/
+!external/rapidjson/
+!external/json_dto/
+!external/asio/
+!external/fmt/
+!external/restinio/
+!external/llhttp/*.c
+!external/llhttp/*.h
+
+# =====================================
+# Raspberry Pi specific ignores
+# =====================================
+/home/pi/.cache/
+/home/pi/.local/
+/home/pi/.config/
+/home/pi/.vscode/
+/home/pi/build/
+/home/pi/temp/
+/home/pi/*.log
+
+# =====================================
+# Python temp and bytecode (for Pi-side testing tools)
+# =====================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =====================================
+# SSH and credentials (never commit)
+# =====================================
+*.pem
+*.key
+*.pub
+*.crt
+*.ssh/
+id_rsa*
+id_dsa*
+known_hosts
